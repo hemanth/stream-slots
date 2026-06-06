@@ -1,0 +1,41 @@
+{
+  "name": "stream-slots",
+  "version": "0.1.0",
+  "description": "Out-of-order HTML streaming via Declarative Partial Updates. Define named slots, fill them in any order, and the browser renders content as it arrives.",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "demo": "node demo/server.js"
+  },
+  "keywords": [
+    "dpu",
+    "declarative-partial-updates",
+    "streaming",
+    "html",
+    "out-of-order",
+    "slots",
+    "progressive-rendering",
+    "server-streaming"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nicolo-ribaudo/stream-slots.git"
+  },
+  "homepage": "https://github.com/nicolo-ribaudo/stream-slots#readme",
+  "bugs": {
+    "url": "https://github.com/nicolo-ribaudo/stream-slots/issues"
+  },
+  "author": "nicolo-ribaudo",
+  "files": [
+    "src/",
+    "README.md"
+  ]
+}

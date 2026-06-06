@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>stream-slots playground</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-brand">
+      <span class="topbar-logo">⚡</span>
+      <h1 class="topbar-title">stream-slots</h1>
+      <span class="topbar-tag">playground</span>
+    </div>
+    <p class="topbar-desc">Out-of-order HTML streaming via Declarative Partial Updates</p>
+  </header>
+
+  <div class="workspace">
+    <!-- Left: Slot Editor -->
+    <section class="panel editor-panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Slot Editor</h2>
+        <button id="add-slot-btn" class="btn btn-ghost" title="Add Slot">+ Add Slot</button>
+      </div>
+      <div id="slot-list" class="slot-list"></div>
+      <div class="editor-actions">
+        <button id="stream-btn" class="btn btn-primary">
+          <span class="btn-icon">▶</span> Stream it!
+        </button>
+        <button id="reset-btn" class="btn btn-ghost">Reset</button>
+      </div>
+    </section>
+
+    <!-- Right: Preview + Log -->
+    <section class="panel preview-panel">
+      <div class="preview-area">
+        <div class="panel-header">
+          <h2 class="panel-title">Live Preview</h2>
+          <span id="preview-status" class="status-badge">idle</span>
+        </div>
+        <div class="iframe-wrap">
+          <iframe id="preview-iframe" sandbox="allow-same-origin allow-scripts" title="Preview"></iframe>
+        </div>
+      </div>
+      <div class="log-area">
+        <div class="panel-header">
+          <h2 class="panel-title">Stream Log</h2>
+          <button id="clear-log-btn" class="btn btn-ghost btn-sm">Clear</button>
+        </div>
+        <div id="stream-log" class="stream-log">
+          <div class="log-empty">Click "Stream it!" to see chunks arrive</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // Default slot data
+    const DEFAULT_SLOTS = [
+      {
+        name: 'hero', delay: 300,
+        html: '<div style="padding:1.75rem 2rem;background:#1e1d1a;border:1px solid #2a2926;border-radius:6px;"><h1 style="margin:0;font-size:1.75rem;font-weight:600;color:#e8e4dc;letter-spacing:-0.02em;">Dashboard</h1><p style="margin:0.5rem 0 0;color:#7a766c;font-size:0.875rem;">Welcome back, developer.</p></div>'
+      },
+      {
+        name: 'metrics', delay: 800,
+        html: '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;"><div style="padding:1.25rem;background:#1e1d1a;border-radius:6px;border:1px solid #2a2926;"><div style="color:#7a766c;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;">Requests</div><div style="color:#e8e4dc;font-size:1.75rem;font-weight:600;margin-top:0.25rem;letter-spacing:-0.02em;">24.5k</div><div style="color:#6db870;font-size:0.75rem;margin-top:0.25rem;">↑ 12%</div></div><div style="padding:1.25rem;background:#1e1d1a;border-radius:6px;border:1px solid #2a2926;"><div style="color:#7a766c;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;">Latency</div><div style="color:#e8e4dc;font-size:1.75rem;font-weight:600;margin-top:0.25rem;letter-spacing:-0.02em;">42ms</div><div style="color:#6db870;font-size:0.75rem;margin-top:0.25rem;">↓ 8%</div></div><div style="padding:1.25rem;background:#1e1d1a;border-radius:6px;border:1px solid #2a2926;"><div style="color:#7a766c;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;">Uptime</div><div style="color:#e8e4dc;font-size:1.75rem;font-weight:600;margin-top:0.25rem;letter-spacing:-0.02em;">99.9%</div><div style="color:#6db870;font-size:0.75rem;margin-top:0.25rem;">Stable</div></div></div>'
+      },
+      {
+        name: 'chart', delay: 1500,
+        html: '<div style="padding:1.25rem;background:#1e1d1a;border-radius:6px;border:1px solid #2a2926;"><h3 style="color:#b5b0a6;margin:0 0 0.75rem;font-size:0.8125rem;font-weight:500;">Traffic (24h)</h3><div style="display:flex;align-items:end;gap:3px;height:100px;"><div style="flex:1;background:#c9a96e;border-radius:2px 2px 0 0;height:60%;opacity:0.8;"></div><div style="flex:1;background:#c9a96e;border-radius:2px 2px 0 0;height:80%;opacity:0.85;"></div><div style="flex:1;background:#c9a96e;border-radius:2px 2px 0 0;height:45%;opacity:0.7;"></div><div style="flex:1;background:#c9a96e;border-radius:2px 2px 0 0;height:90%;opacity:0.9;"></div><div style="flex:1;background:#c9a96e;border-radius:2px 2px 0 0;height:70%;opacity:0.8;"></div><div style="flex:1;background:#c9a96e;border-radius:2px 2px 0 0;height:100%;"></div><div style="flex:1;background:#c9a96e;border-radius:2px 2px 0 0;height:55%;opacity:0.75;"></div><div style="flex:1;background:#c9a96e;border-radius:2px 2px 0 0;height:85%;opacity:0.85;"></div></div></div>'
+      },
+      {
+        name: 'footer', delay: 2200,
+        html: '<div style="padding:0.75rem 0;border-top:1px solid #2a2926;color:#504d46;font-size:0.75rem;display:flex;justify-content:space-between;"><span>stream-slots v0.1.0</span><span>Declarative Partial Updates</span></div>'
+      }
+    ];
+
+    const slotList = document.getElementById('slot-list');
+    const addBtn = document.getElementById('add-slot-btn');
+    const streamBtn = document.getElementById('stream-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const iframe = document.getElementById('preview-iframe');
+    const logEl = document.getElementById('stream-log');
+    const statusBadge = document.getElementById('preview-status');
+    const clearLogBtn = document.getElementById('clear-log-btn');
+
+    let slotCounter = 0;
+
+    function createSlotRow(data = {}) {
+      const id = ++slotCounter;
+      const row = document.createElement('div');
+      row.className = 'slot-row';
+      row.dataset.id = id;
+      row.innerHTML = `
+        <div class="slot-row-header">
+          <input type="text" class="input slot-name" placeholder="slot name" value="${data.name || ''}">
+          <div class="delay-control">
+            <input type="range" class="slot-delay" min="0" max="5000" step="100" value="${data.delay || 500}">
+            <span class="delay-label">${data.delay || 500}ms</span>
+          </div>
+          <button class="btn btn-icon-only remove-slot" title="Remove">&times;</button>
+        </div>
+        <textarea class="input slot-html" rows="3" placeholder="<div>HTML content...</div>">${data.html || ''}</textarea>
+      `;
+
+      const slider = row.querySelector('.slot-delay');
+      const label = row.querySelector('.delay-label');
+      slider.addEventListener('input', () => {
+        label.textContent = slider.value + 'ms';
+      });
+
+      row.querySelector('.remove-slot').addEventListener('click', () => {
+        row.classList.add('slot-row-removing');
+        setTimeout(() => row.remove(), 200);
+      });
+
+      slotList.appendChild(row);
+      requestAnimationFrame(() => row.classList.add('slot-row-visible'));
+    }
+
+    function getSlotData() {
+      const rows = slotList.querySelectorAll('.slot-row');
+      const slots = [];
+      rows.forEach(row => {
+        const name = row.querySelector('.slot-name').value.trim();
+        const html = row.querySelector('.slot-html').value;
+        const delay = parseInt(row.querySelector('.slot-delay').value, 10);
+        if (name) slots.push({ name, html, delay });
+      });
+      return slots;
+    }
+
+    function log(text, type = 'info') {
+      const emptyMsg = logEl.querySelector('.log-empty');
+      if (emptyMsg) emptyMsg.remove();
+
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${type}`;
+      const time = new Date().toLocaleTimeString('en', { hour12: false, fractionalSecondDigits: 3 });
+      const preview = text.length > 200 ? text.slice(0, 200) + '…' : text;
+      entry.innerHTML = `<span class="log-time">${time}</span><span class="log-text">${escapeHtml(preview)}</span>`;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function escapeHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function setStatus(text, type = 'idle') {
+      statusBadge.textContent = text;
+      statusBadge.className = `status-badge status-${type}`;
+    }
+
+    async function doStream() {
+      const slots = getSlotData();
+      if (!slots.length) return;
+
+      const json = JSON.stringify(slots);
+      const bytes = new TextEncoder().encode(json);
+      const config = btoa(String.fromCharCode(...bytes))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      const url = `/custom-stream?config=${config}`;
+
+      // Load in iframe
+      iframe.src = url;
+      setStatus('streaming', 'active');
+      log('▶ Stream started', 'start');
+
+      // Also fetch to read chunks for the log
+      try {
+        const res = await fetch(url);
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let chunkIdx = 0;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const text = decoder.decode(value, { stream: true });
+          chunkIdx++;
+
+          if (text.includes('<template for=')) {
+            const match = text.match(/for="([^"]+)"/);
+            const slotName = match ? match[1] : '?';
+            log(`📦 Chunk #${chunkIdx}: <template for="${slotName}"> (${text.length} bytes)`, 'fill');
+          } else if (text.includes('<!DOCTYPE')) {
+            log(`📄 Chunk #${chunkIdx}: HTML shell (${text.length} bytes)`, 'shell');
+          } else {
+            log(`📨 Chunk #${chunkIdx}: ${text.length} bytes`, 'info');
+          }
+        }
+
+        setStatus('complete', 'done');
+        log('✓ Stream complete', 'done');
+      } catch (err) {
+        setStatus('error', 'error');
+        log(`✗ ${err.message}`, 'error');
+      }
+    }
+
+    // Event listeners
+    streamBtn.addEventListener('click', doStream);
+    addBtn.addEventListener('click', () => createSlotRow());
+    resetBtn.addEventListener('click', () => {
+      slotList.innerHTML = '';
+      slotCounter = 0;
+      DEFAULT_SLOTS.forEach(s => createSlotRow(s));
+    });
+    clearLogBtn.addEventListener('click', () => {
+      logEl.innerHTML = '<div class="log-empty">Click "Stream it!" to see chunks arrive</div>';
+    });
+
+    // Init with defaults
+    DEFAULT_SLOTS.forEach(s => createSlotRow(s));
+  </script>
+</body>
+</html>
