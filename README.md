@@ -243,7 +243,7 @@ page.abort(new Error('Critical failure'));
 ## Demo
 
 ```bash
-git clone https://github.com/nicolo-ribaudo/stream-slots
+git clone https://github.com/hemanth/stream-slots
 cd stream-slots
 node demo/server.js
 # Open http://localhost:3000

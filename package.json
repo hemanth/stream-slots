@@ -27,13 +27,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nicolo-ribaudo/stream-slots.git"
+    "url": "git+https://github.com/hemanth/stream-slots.git"
   },
-  "homepage": "https://github.com/nicolo-ribaudo/stream-slots#readme",
+  "homepage": "https://github.com/hemanth/stream-slots#readme",
   "bugs": {
-    "url": "https://github.com/nicolo-ribaudo/stream-slots/issues"
+    "url": "https://github.com/hemanth/stream-slots/issues"
   },
-  "author": "nicolo-ribaudo",
+  "author": "hemanth",
   "files": [
     "src/",
     "README.md"
